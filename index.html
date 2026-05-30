@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="ImmoSim"/>
+<meta name="theme-color" content="#0d1117"/>
+<title>Simulateur Locatif Pro</title>
+<link rel="manifest" href="manifest.json"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2430;--border:#30363d;
+  --accent:#e8a045;--blue:#4f9cf9;--green:#3fb950;--red:#f85149;
+  --muted:#8b949e;--text:#e6edf3;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overscroll-behavior:none;}
+body{padding-bottom:80px;}
+
+/* ââ NAV ââ */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;background:none;border:none;color:var(--muted);font-size:10px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:color .2s;}
+.nav-btn.active{color:var(--accent);}
+.nav-btn span{font-size:20px;}
+
+/* ââ HEADER ââ */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px;padding-top:calc(16px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.header-title{font-size:18px;font-weight:800;letter-spacing:-0.02em;}
+.header-title span{color:var(--accent);}
+.score-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;font-family:'DM Mono',monospace;}
+
+/* ââ PAGES ââ */
+.page{display:none;padding:16px;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ââ CARDS ââ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.card-title{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;}
+
+/* ââ KPI GRID ââ */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.kpi{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.kpi-label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+.kpi-value{font-size:26px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* ââ CASHFLOW HERO ââ */
+.cf-hero{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;margin-bottom:14px;}
+.cf-label{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.cf-value{font-size:48px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;}
+.cf-sub{font-size:12px;color:var(--muted);margin-top:8px;}
+.cf-pills{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+.pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;}
+
+/* ââ SLIDER ââ */
+.slider-wrap{margin-bottom:18px;}
+.slider-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.slider-label{font-size:13px;color:var(--muted);}
+.slider-val{font-size:15px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace;}
+.track{position:relative;height:6px;background:var(--border);border-radius:3px;margin-bottom:4px;}
+.track-fill{position:absolute;left:0;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--accent));transition:width .1s;}
+input[type=range]{position:absolute;top:-8px;left:0;width:100%;opacity:0;cursor:pointer;height:22px;margin:0;}
+.slider-bounds{display:flex;justify-content:space-between;font-size:10px;color:var(--border);}
+.slider-hint{font-size:11px;color:var(--accent);margin-top:2px;font-style:italic;}
+
+/* ââ TABLE ââ */
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.data-row:last-child{border-bottom:none;}
+.data-label{font-size:13px;color:var(--muted);}
+.data-label.bold{color:var(--text);font-weight:700;}
+.data-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;}
+
+/* ââ TABS ââ */
+.tabs{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:16px;}
+.tab-btn{flex:1;padding:8px 4px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.tab-btn.active{background:var(--accent);color:#0d1117;}
+
+/* ââ REGIME SELECTOR ââ */
+.regime-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.regime-btn{padding:10px 6px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.regime-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(232,160,69,.1);}
+
+/* ââ RISK BARS ââ */
+.risk-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.risk-label{font-size:12px;color:var(--muted);flex:1;}
+.risk-bar-wrap{width:70px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:0 10px;}
+.risk-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.risk-val{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;min-width:75px;text-align:right;}
+
+/* ââ PROJECTION TABLE ââ */
+.proj-row{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.proj-row.head{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+.proj-cell{flex:1;text-align:right;font-family:'DM Mono',monospace;}
+.proj-cell.year{color:var(--accent);font-weight:700;text-align:left;}
+
+/* ââ COMPARE ââ */
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.compare-card{background:var(--surface2);border-radius:12px;padding:12px;border:1px solid var(--border);}
+.compare-name{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+.compare-big{font-size:22px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;margin-bottom:4px;}
+.compare-sm{font-size:11px;color:var(--muted);margin-bottom:8px;}
+
+/* ââ INSTALL BANNER ââ */
+.install-banner{background:linear-gradient(135deg,rgba(79,156,249,.15),rgba(232,160,69,.15));border:1px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;display:none;}
+.install-banner.show{display:flex;align-items:center;gap:12px;}
+.install-btn{background:var(--accent);color:#0d1117;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;}
+
+/* ââ AMORT TABLE ââ */
+.amort-wrap{overflow-x:auto;}
+.amort-table{width:100%;border-collapse:collapse;font-size:12px;}
+.amort-table th{padding:8px 10px;text-align:right;font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);}
+.amort-table td{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;border-bottom:1px solid rgba(48,54,61,.5);}
+.amort-table tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Immo<span>Sim</span> Pro</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px;">Simulateur locatif</div>
+  </div>
+  <div class="score-badge" id="scoreBadge">Score: â</div>
+</div>
+
+<!-- Install banner -->
+<div class="install-banner" id="installBanner">
+  <div style="flex:1;font-size:12px;color:var(--text);">ð² Ajouter Ã  l'Ã©cran d'accueil pour utiliser hors ligne</div>
+  <button class="install-btn" id="installBtn">Installer</button>
+</div>
+
+<!-- ââ PAGE: PARAMÃTRES ââ -->
+<div class="page active" id="page-params">
+  <div class="card">
+    <div class="card-title">RÃ©gime fiscal</div>
+    <div class="regime-grid">
+      <button class="regime-btn active" onclick="setRegime('nm')">ð <br/>Non meublÃ©</button>
+      <button class="regime-btn" onclick="setRegime('lmnp')">ðï¸<br/>LMNP</button>
+      <button class="regime-btn" onclick="setRegime('saison')">ðï¸<br/>Saisonnier</button>
+    </div>
+    <div id="regimeHint" style="display:none;font-size:11px;color:var(--accent);background:rgba(232,160,69,.1);border-radius:8px;padding:8px 10px;margin-top:-8px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ð  Le bien</div>
+    <div id="sliders-bien"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ð¦ Financement</div>
+    <div id="sliders-finance"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ð Charges</div>
+    <div id="sliders-charges"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ð FiscalitÃ© & Projection</div>
+    <div id="sliders-fiscal"></div>
+  </div>
+</div>
+
+<!-- ââ PAGE: RÃSULTATS ââ -->
+<div class="page" id="page-results">
+  <div class="cf-hero">
+    <div class="cf-label">Cash-flow mensuel net</div>
+    <div class="cf-value" id="cfValue">â</div>
+    <div class="cf-sub">aprÃ¨s crÃ©dit et toutes charges</div>
+    <div class="cf-pills">
+      <div class="pill">Loyer/mensualitÃ© : <strong id="ratioVal" style="color:var(--accent)">â</strong></div>
+      <div class="pill">Effort : <strong id="effortVal" style="color:var(--red)">â</strong>/mois</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">RentabilitÃ© brute</div><div class="kpi-value" id="rentaBrute">â</div></div>
+    <div class="kpi"><div class="kpi-label">RentabilitÃ© nette</div><div class="kpi-value" id="rentaNette">â</div></div>
+    <div class="kpi"><div class="kpi-label">CoÃ»t total</div><div class="kpi-value" style="font-size:18px" id="coutTotal">â</div><div class="kpi-sub" id="coutSub">â</div></div>
+    <div class="kpi"><div class="kpi-label">MensualitÃ© crÃ©dit</div><div class="kpi-value" style="font-size:18px" id="mensualite">â</div><div class="kpi-sub" id="empruntSub">â</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Compte d'exploitation annuel</div>
+    <div id="exploTable"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">â ï¸ Analyse de sensibilitÃ©</div>
+    <div id="riskRows"></div>
+  </div>
+</div>
+
+<!-- ââ PAGE: PROJECTION ââ -->
+<div class="page" id="page-proj">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Valeur dans 25 ans</div><div class="kpi-value" style="font-size:18px;color:var(--green)" id="val25">â</div></div>
+    <div class="kpi"><div class="kpi-label">Patrimoine net</div><div class="kpi-value" style="font-size:18px;color:var(--accent)" id="patNet">â</div></div>
+    <div class="kpi"><div class="kpi-label">Plus-value potentielle</div><div class="kpi-value" style="font-size:18px;color:var(--blue)" id="plusVal">â</div></div>
+    <div class="kpi"><div class="kpi-label">Total loyers encaissÃ©s</div><div class="kpi-value" style="font-size:18px" id="totalLoyers">â</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ð Projection annuelle</div>
+    <div class="proj-row head">
+      <div class="proj-cell year">An</div>
+      <div class="proj-cell">Valeur</div>
+      <div class="proj-cell">Capital dÃ»</div>
+      <div class="proj-cell">Patrimoine</div>
+    </div>
+    <div id="projRows" style="max-height:400px;overflow-y:auto;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ð Amortissement crÃ©dit</div>
+    <div class="amort-wrap">
+      <table class="amort-table">
+        <thead><tr><th style="text-align:left">AnnÃ©e</th><th>IntÃ©rÃªts</th><th>Capital</th><th>Restant dÃ»</th></tr></thead>
+        <tbody id="amortRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ââ PAGE: COMPARATIF ââ -->
+<div class="page" id="page-compare">
+  <div class="compare-grid">
+    <div class="compare-card" style="border-color:rgba(79,156,249,.3)">
+      <div class="compare-name" style="color:var(--blue)">Non meublÃ©</div>
+      <div class="compare-big" id="cmp-nm-brute" style="color:var(--blue)">â</div>
+      <div class="compare-sm">Renta brute</div>
+      <div style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace" id="cmp-nm-cf">â</div>
+      <div class="compare-sm">Cash-flow/mois</div>
+      <div style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--muted)" id="cmp-nm-net">â</div>
+      <div class="compare-sm">Renta nette</div>
+    </div>
+    <div class="compare-card" style="border-color:rgba(63,185,80,.3)">
+      <div class="compare-name" style="color:var(--green)">LMNP</div>
+      <div class="compare-big" id="cmp-lmnp-brute" style="color:var(--green)">â</div>
+      <div class="compare-sm">Renta brute</div>
+      <div style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace" id="cmp-lmnp-cf">â</div>
+      <div class="compare-sm">Cash-flow/mois</div>
+      <div style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--muted)" id="cmp-lmnp-net">â</div>
+      <div class="compare-sm">Renta nette</div>
+    </div>
+    <div class="compare-card" style="border-color:rgba(232,160,69,.3)">
+      <div class="compare-name" style="color:var(--accent)">Saisonnier</div>
+      <div class="compare-big" id="cmp-sais-brute" style="color:var(--accent)">â</div>
+      <div class="compare-sm">Renta brute</div>
+      <div style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace" id="cmp-sais-cf">â</div>
+      <div class="compare-sm">Cash-flow/mois</div>
+      <div style="font-size:13px;color:var(--muted)" id="cmp-sais-note">Gestion intensive</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quel rÃ©gime pour maximiser le cash-flow ?</div>
+    <div id="recommandation"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">âï¸ SynthÃ¨se des rÃ©gimes</div>
+    <div class="data-row">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">ð  Non meublÃ©</div>
+        <div style="font-size:12px;color:var(--green)">â Stable, bail 3 ans, peu de gestion</div>
+        <div style="font-size:12px;color:var(--red)">â Pas d'amortissement, fiscalitÃ© lourde</div>
+      </div>
+    </div>
+    <div class="data-row">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">ðï¸ LMNP MeublÃ©</div>
+        <div style="font-size:12px;color:var(--green)">â 0 impÃ´t 10-15 ans, loyer +15-20%</div>
+        <div style="font-size:12px;color:var(--red)">â Turnover, mobilier Ã  entretenir</div>
+      </div>
+    </div>
+    <div class="data-row">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">ðï¸ Saisonnier</div>
+        <div style="font-size:12px;color:var(--green)">â Meilleur rendement brut potentiel</div>
+        <div style="font-size:12px;color:var(--red)">â Gestion intensive, rÃ©glementation variable</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;padding:0 8px;">
+    Simulation indicative Â· Consultez un CGP ou expert-comptable pour valider votre projet
+  </div>
+</div>
+
+<!-- ââ BOTTOM NAV ââ -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('params',this)"><span>âï¸</span>ParamÃ¨tres</button>
+  <button class="nav-btn" onclick="showPage('results',this)"><span>ð</span>RÃ©sultats</button>
+  <button class="nav-btn" onclick="showPage('proj',this)"><span>ð­</span>Projection</button>
+  <button class="nav-btn" onclick="showPage('compare',this)"><span>âï¸</span>Comparatif</button>
+</nav>
+
+<script>
+// ââ STATE ââ
+const state = {
+  regime: 'nm',
+  prixAchat: 120000, travaux: 15000, meubles: 0, loyer: 600,
+  apport: 15000, tauxCredit: 3.1, dureeCredit: 20,
+  taxeFonciere: 1200, chargesCopro: 800, gestion: 8, gli: 3,
+  vacance: 1, tranche: 30, revalorisation: 2, tauxOccupation: 65
+};
+
+// ââ FORMATTERS ââ
+const fmt = (n) => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+const pct = (n,d=2) => n.toFixed(d)+' %';
+
+// ââ SLIDER DEFINITIONS ââ
+const sliderGroups = {
+  bien: [
+    {key:'prixAchat',label:"Prix d'achat",min:50000,max:500000,step:1000,unit:'â¬'},
+    {key:'travaux',label:'Budget travaux',min:0,max:100000,step:500,unit:'â¬',hint:'DÃ©ductible en dÃ©ficit foncier'},
+    {key:'loyer',label:'Loyer mensuel',min:300,max:2500,step:25,unit:'â¬',dynamicHint:true},
+  ],
+  finance: [
+    {key:'apport',label:'Apport personnel',min:0,max:150000,step:1000,unit:'â¬'},
+    {key:'tauxCredit',label:'Taux du crÃ©dit',min:1.5,max:6,step:0.05,unit:'%'},
+    {key:'dureeCredit',label:'DurÃ©e',min:10,max:25,step:1,unit:'ans'},
+  ],
+  charges: [
+    {key:'taxeFonciere',label:'Taxe fonciÃ¨re/an',min:200,max:4000,step:50,unit:'â¬'},
+    {key:'chargesCopro',label:'Charges copro/an',min:0,max:4000,step:50,unit:'â¬'},
+    {key:'gestion',label:'Frais de gestion',min:0,max:12,step:0.5,unit:'%'},
+    {key:'gli',label:'GLI',min:0,max:5,step:0.5,unit:'%'},
+    {key:'vacance',label:'Vacance locative',min:0,max:3,step:0.5,unit:'mois'},
+  ],
+  fiscal: [
+    {key:'tranche',label:"Tranche d'imposition",min:0,max:45,step:11,unit:'%'},
+    {key:'revalorisation',label:'Revalorisation/an',min:-2,max:6,step:0.5,unit:'%'},
+    {key:'tauxOccupation',label:"Taux d'occupation (saisonnier)",min:20,max:95,step:5,unit:'%'},
+  ]
+};
+
+function formatVal(val, unit) {
+  if(unit==='â¬') return fmt(val);
+  if(unit==='%') return val+' %';
+  return val+' '+unit;
+}
+
+function buildSliders() {
+  Object.entries(sliderGroups).forEach(([group, defs]) => {
+    const container = document.getElementById('sliders-'+group);
+    container.innerHTML = defs.map(d => `
+      <div class="slider-wrap" id="wrap-${d.key}">
+        <div class="slider-row">
+          <span class="slider-label">${d.label}</span>
+          <span class="slider-val" id="val-${d.key}">${formatVal(state[d.key], d.unit)}</span>
+        </div>
+        <div class="track" id="track-${d.key}">
+          <div class="track-fill" id="fill-${d.key}" style="width:${((state[d.key]-d.min)/(d.max-d.min))*100}%"></div>
+          <input type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${state[d.key]}"
+            oninput="updateSlider('${d.key}',${d.min},${d.max},'${d.unit}',this.value)">
+        </div>
+        <div class="slider-bounds"><span>${formatVal(d.min,d.unit)}</span><span>${formatVal(d.max,d.unit)}</span></div>
+        ${d.hint ? `<div class="slider-hint">${d.hint}</div>` : ''}
+        ${d.dynamicHint ? `<div class="slider-hint" id="dynhint-${d.key}"></div>` : ''}
+      </div>
+    `).join('');
+  });
+  updateRegimeUI();
+}
+
+function updateSlider(key, min, max, unit, val) {
+  val = Number(val);
+  state[key] = val;
+  document.getElementById('val-'+key).textContent = formatVal(val, unit);
+  const pctFill = ((val-min)/(max-min))*100;
+  document.getElementById('fill-'+key).style.width = pctFill+'%';
+  if(key==='loyer') updateLoyerHint();
+  compute();
+}
+
+function updateLoyerHint() {
+  const el = document.getElementById('dynhint-loyer');
+  if(!el) return;
+  if(state.regime==='lmnp') el.textContent = `â MeublÃ© estimÃ© : ${fmt(state.loyer*1.15)}/mois`;
+  else if(state.regime==='saison') el.textContent = `â Nuit estimÃ©e : ${fmt(state.loyer*2.2/30)}`;
+  else el.textContent = '';
+}
+
+function setRegime(r) {
+  state.regime = r;
+  document.querySelectorAll('.regime-btn').forEach((b,i) => b.classList.toggle('active', ['nm','lmnp','saison'][i]===r));
+  const hints = {
+    lmnp:'ð¡ Loyer estimÃ© +15% Â· Amortissement comptable activÃ© Â· IdÃ©al pour rÃ©duire l\'impÃ´t',
+    saison:`ð¡ Loyer Ã2.2 Â· Taux d'occupation variable Â· Gestion plus intensive`,
+    nm:''
+  };
+  const hintEl = document.getElementById('regimeHint');
+  hintEl.textContent = hints[r];
+  hintEl.style.display = hints[r] ? 'block' : 'none';
+  // show/hide meubles slider
+  document.getElementById('wrap-meubles') && (document.getElementById('wrap-meubles').style.display = r==='nm'?'none':'block');
+  document.getElementById('wrap-tauxOccupation') && (document.getElementById('wrap-tauxOccupation').style.display = r==='saison'?'block':'none');
+  updateLoyerHint();
+  compute();
+}
+
+function updateRegimeUI() {
+  const meublesWrap = document.getElementById('wrap-meubles');
+  if(meublesWrap) meublesWrap.style.display = state.regime==='nm'?'none':'block';
+  const occWrap = document.getElementById('wrap-tauxOccupation');
+  if(occWrap) occWrap.style.display = state.regime==='saison'?'block':'none';
+}
+
+// ââ CORE COMPUTE ââ
+function compute() {
+  const p = state;
+  const fraisNotaire = p.prixAchat * 0.08;
+  const coutTotal = p.prixAchat + fraisNotaire + p.travaux + (p.regime!=='nm'?p.meubles:0);
+  const emprunt = Math.max(0, coutTotal - p.apport);
+  const tauxM = p.tauxCredit/100/12;
+  const nbMois = p.dureeCredit*12;
+  const mensualite = emprunt>0 ? emprunt*(tauxM*Math.pow(1+tauxM,nbMois))/(Math.pow(1+tauxM,nbMois)-1) : 0;
+  const interetsAn = emprunt*(p.tauxCredit/100);
+
+  // NM
+  const loyersAnNM = p.loyer*12;
+  const loyersEffNM = loyersAnNM*(1-p.vacance/12);
+  const gestionNM = loyersEffNM*(p.gestion/100);
+  const gliNM = loyersEffNM*(p.gli/100);
+  const chargesFixesNM = p.taxeFonciere+p.chargesCopro+gestionNM+gliNM;
+  const resultatNM = loyersEffNM - chargesFixesNM - interetsAn;
+  const deficitNM = Math.min(Math.max(-resultatNM,0),10700);
+  const econoNM = deficitNM*((p.tranche+17.2)/100);
+  const rentaBruteNM = (loyersAnNM/coutTotal)*100;
+  const rentaNetteNM = ((loyersEffNM-chargesFixesNM)/coutTotal)*100;
+  const cfNM = (loyersEffNM/12) - mensualite - chargesFixesNM/12;
+
+  // LMNP
+  const loyerMeuble = p.loyer*1.15;
+  const loyersAnLMNP = loyerMeuble*12;
+  const loyersEffLMNP = loyersAnLMNP*(1-p.vacance/12);
+  const amortBien = p.prixAchat/30;
+  const amortTravaux = p.travaux/10;
+  const amortMeubles = p.meubles/7;
+  const amortTotal = amortBien+amortTravaux+amortMeubles;
+  const gestionLMNP = loyersEffLMNP*(p.gestion/100);
+  const gliLMNP = loyersEffLMNP*(p.gli/100);
+  const chargesFixesLMNP = p.taxeFonciere+p.chargesCopro+gestionLMNP+gliLMNP;
+  const resultatLMNP = loyersEffLMNP - chargesFixesLMNP - interetsAn - amortTotal;
+  const impotLMNP = Math.max(0,resultatLMNP)*((p.tranche+17.2)/100);
+  const rentaBruteLMNP = (loyersAnLMNP/coutTotal)*100;
+  const rentaNetteLMNP = ((loyersEffLMNP-chargesFixesLMNP)/coutTotal)*100;
+  const cfLMNP = (loyersEffLMNP/12) - mensualite - chargesFixesLMNP/12;
+
+  // SAISON
+  const loyerSaison = p.loyer*2.2;
+  const loyersAnSaison = loyerSaison*12*(p.tauxOccupation/100);
+  const gestionSaison = loyersAnSaison*0.20;
+  const entretienSaison = loyersAnSaison*0.15;
+  const chargesSaison = p.taxeFonciere+p.chargesCopro+gestionSaison+entretienSaison+interetsAn;
+  const rentaBruteSaison = (loyersAnSaison/coutTotal)*100;
+  const cfSaison = (loyersAnSaison/12) - mensualite - (p.taxeFonciere+p.chargesCopro+gestionSaison+entretienSaison)/12;
+
+  // Active
+  const active = p.regime==='nm' ? {cf:cfNM,brute:rentaBruteNM,nette:rentaNetteNM,loyersEff:loyersEffNM}
+               : p.regime==='lmnp' ? {cf:cfLMNP,brute:rentaBruteLMNP,nette:rentaNetteLMNP,loyersEff:loyersEffLMNP}
+               : {cf:cfSaison,brute:rentaBruteSaison,nette:null,loyersEff:loyersAnSaison};
+
+  // Score
+  let score = 50;
+  if(rentaNetteNM>6) score+=15; else if(rentaNetteNM>4) score+=7;
+  if(cfNM>0) score+=15; else if(cfNM>-200) score+=5;
+  if(p.travaux>5000) score+=10;
+  if(p.gli>0) score+=5;
+  if(p.vacance<=1) score+=5;
+  score=Math.min(100,Math.max(5,score));
+
+  // Projection
+  const projection=[];
+  let capR=emprunt, valB=p.prixAchat;
+  let totalLoyersEnc=0;
+  for(let yr=1;yr<=25;yr++){
+    const intAn=capR*(p.tauxCredit/100);
+    const capAn=Math.min(capR,mensualite*12-intAn);
+    capR=Math.max(0,capR-capAn);
+    valB*=(1+p.revalorisation/100);
+    totalLoyersEnc+=loyersEffNM*Math.pow(1.017,yr);
+    projection.push({year:yr,valeurBien:Math.round(valB),capitalRestant:Math.round(capR),patrimoine:Math.round(valB-capR)});
+  }
+
+  // Amort table
+  let cap2=emprunt;
+  const amortTable=[];
+  for(let yr=1;yr<=p.dureeCredit;yr++){
+    const intAn2=cap2*(p.tauxCredit/100);
+    const capAn2=mensualite*12-intAn2;
+    cap2=Math.max(0,cap2-capAn2);
+    amortTable.push({year:yr,interets:Math.round(intAn2),capital:Math.round(capAn2),restant:Math.round(cap2)});
+  }
+
+  // ââ UPDATE UI ââ
+  // Score
+  const sc = document.getElementById('scoreBadge');
+  sc.textContent = `Score: ${score}/100`;
+  sc.style.color = score>=70?'var(--green)':score>=45?'var(--accent)':'var(--red)';
+
+  // CF Hero
+  const cfEl = document.getElementById('cfValue');
+  cfEl.textContent = (active.cf>=0?'+':'')+fmt(active.cf);
+  cfEl.style.color = active.cf>=0?'var(--green)':'var(--red)';
+  document.getElementById('ratioVal').textContent = ((p.loyer/mensualite)*100).toFixed(0)+'%';
+  document.getElementById('effortVal').textContent = fmt(Math.max(0,-active.cf));
+
+  // KPIs
+  const setKPI = (id,val,color) => { const el=document.getElementById(id); if(el){el.textContent=val; if(color)el.style.color=color;} };
+  const bColor = active.brute>6?'var(--green)':active.brute>4?'var(--accent)':'var(--red)';
+  const nColor = active.nette&&active.nette>5?'var(--green)':active.nette&&active.nette>3?'var(--accent)':'var(--red)';
+  setKPI('rentaBrute',pct(active.brute),bColor);
+  setKPI('rentaNette',active.nette!==null?pct(active.nette):'â',nColor);
+  setKPI('coutTotal',fmt(coutTotal));
+  setKPI('coutSub','dont '+fmt(fraisNotaire)+' notaire');
+  setKPI('mensualite',fmt(mensualite)+'/mois');
+  setKPI('empruntSub','Emprunt : '+fmt(emprunt));
+
+  // Exploitation
+  let rows = '';
+  if(p.regime==='nm'){
+    const rowData=[
+      ['Loyers encaissÃ©s',fmt(loyersEffNM),'var(--green)',false],
+      ['â IntÃ©rÃªts crÃ©dit',fmt(interetsAn),'var(--red)',false],
+      ['â Taxe fonciÃ¨re',fmt(p.taxeFonciere),'var(--red)',false],
+      ['â Charges copro',fmt(p.chargesCopro),'var(--red)',false],
+      ['â Frais gestion',fmt(gestionNM),'var(--red)',false],
+      ['â GLI',fmt(gliNM),'var(--red)',false],
+      ['= RÃ©sultat foncier',fmt(resultatNM),resultatNM<0?'var(--accent)':'var(--green)',true],
+      ['DÃ©ficit imputable',fmt(deficitNM),'var(--blue)',false],
+      ['â Ãconomie d\'impÃ´t',fmt(econoNM),'var(--green)',true],
+    ];
+    rows = rowData.map(([l,v,c,b])=>`<div class="data-row"><span class="data-label${b?' bold':''}">${l}</span><span class="data-val" style="color:${c}">${v}</span></div>`).join('');
+  } else if(p.regime==='lmnp'){
+    const rowData=[
+      ['Loyers encaissÃ©s (meublÃ©)',fmt(loyersEffLMNP),'var(--green)',false],
+      ['â Amortissements',fmt(amortTotal),'var(--blue)',false],
+      ['â Toutes charges',fmt(chargesFixesLMNP+interetsAn),'var(--red)',false],
+      ['= BÃ©nÃ©fice imposable',fmt(Math.max(0,resultatLMNP)),resultatLMNP<0?'var(--green)':'var(--accent)',true],
+      ['ImpÃ´t estimÃ©',fmt(impotLMNP),'var(--red)',false],
+    ];
+    rows = rowData.map(([l,v,c,b])=>`<div class="data-row"><span class="data-label${b?' bold':''}">${l}</span><span class="data-val" style="color:${c}">${v}</span></div>`).join('');
+  } else {
+    const rowData=[
+      [`Recettes (${p.tauxOccupation}% occupation)`,fmt(loyersAnSaison),'var(--green)',false],
+      ['â Gestion plateforme (20%)',fmt(gestionSaison),'var(--red)',false],
+      ['â Entretien/mÃ©nage (15%)',fmt(entretienSaison),'var(--red)',false],
+      ['â Charges fixes',fmt(p.taxeFonciere+p.chargesCopro),'var(--red)',false],
+    ];
+    rows = rowData.map(([l,v,c,b])=>`<div class="data-row"><span class="data-label${b?' bold':''}">${l}</span><span class="data-val" style="color:${c}">${v}</span></div>`).join('');
+  }
+  document.getElementById('exploTable').innerHTML = rows;
+
+  // SensibilitÃ©
+  const risks = [
+    {label:'Loyer -10%', cf:((loyersEffNM*0.9)/12)-mensualite-chargesFixesNM/12},
+    {label:'Vacance 2 mois', cf:((p.loyer*10)/12)-mensualite-chargesFixesNM/12},
+    {label:'Charges +20%', cf:(loyersEffNM/12)-mensualite-(chargesFixesNM*1.2)/12},
+    {label:'Loyer +5%', cf:((loyersEffNM*1.05)/12)-mensualite-chargesFixesNM/12},
+  ];
+  document.getElementById('riskRows').innerHTML = risks.map(s=>`
+    <div class="risk-row">
+      <span class="risk-label">${s.label}</span>
+      <div class="risk-bar-wrap"><div class="risk-bar-fill" style="width:${Math.min(100,Math.max(0,(s.cf+500)/10))}%;background:${s.cf>=0?'var(--green)':'var(--red)'}"></div></div>
+      <span class="risk-val" style="color:${s.cf>=0?'var(--green)':'var(--red)'}">${s.cf>=0?'+':''}${fmt(s.cf)}</span>
+    </div>
+  `).join('');
+
+  // Projection KPIs
+  const p25 = projection[24];
+  setKPI('val25',fmt(p25.valeurBien));
+  setKPI('patNet',fmt(p25.patrimoine));
+  setKPI('plusVal',fmt(p25.valeurBien-coutTotal));
+  setKPI('totalLoyers',fmt(totalLoyersEnc));
+
+  // Projection rows
+  document.getElementById('projRows').innerHTML = projection.map(r=>`
+    <div class="proj-row">
+      <div class="proj-cell year">An ${r.year}</div>
+      <div class="proj-cell" style="color:var(--green)">${fmt(r.valeurBien)}</div>
+      <div class="proj-cell" style="color:var(--red)">${fmt(r.capitalRestant)}</div>
+      <div class="proj-cell" style="color:var(--accent)">${fmt(r.patrimoine)}</div>
+    </div>
+  `).join('');
+
+  // Amort rows
+  document.getElementById('amortRows').innerHTML = amortTable.map(r=>`
+    <tr>
+      <td style="text-align:left;color:var(--accent);font-weight:700">An ${r.year}</td>
+      <td style="color:var(--red)">${fmt(r.interets)}</td>
+      <td style="color:var(--green)">${fmt(r.capital)}</td>
+      <td style="color:var(--muted)">${fmt(r.restant)}</td>
+    </tr>
+  `).join('');
+
+  // Comparatif
+  const setCmp = (id,val,color) => { const el=document.getElementById(id); if(el){el.textContent=val; if(color)el.style.color=color;} };
+  setCmp('cmp-nm-brute',pct(rentaBruteNM));
+  setCmp('cmp-nm-cf',(cfNM>=0?'+':'')+fmt(cfNM),cfNM>=0?'var(--green)':'var(--red)');
+  setCmp('cmp-nm-net',pct(rentaNetteNM));
+  setCmp('cmp-lmnp-brute',pct(rentaBruteLMNP));
+  setCmp('cmp-lmnp-cf',(cfLMNP>=0?'+':'')+fmt(cfLMNP),cfLMNP>=0?'var(--green)':'var(--red)');
+  setCmp('cmp-lmnp-net',pct(rentaNetteLMNP));
+  setCmp('cmp-sais-brute',pct(rentaBruteSaison));
+  setCmp('cmp-sais-cf',(cfSaison>=0?'+':'')+fmt(cfSaison),cfSaison>=0?'var(--green)':'var(--red)');
+
+  // Recommandation
+  const best = cfLMNP>=cfNM && cfLMNP>=cfSaison ? 'LMNP' : cfSaison>=cfNM ? 'Saisonnier' : 'Non meublÃ©';
+  const bestCf = Math.max(cfNM,cfLMNP,cfSaison);
+  const recEl = document.getElementById('recommandation');
+  if(recEl) recEl.innerHTML = `
+    <div style="background:rgba(63,185,80,.1);border:1px solid var(--green);border-radius:10px;padding:14px;margin-bottom:10px;">
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px;">ð Meilleur cash-flow : ${best}</div>
+      <div style="font-size:24px;font-weight:800;font-family:'DM Mono',monospace;color:${bestCf>=0?'var(--green)':'var(--accent)'}">${bestCf>=0?'+':''}${fmt(bestCf)}/mois</div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6">
+      ${bestCf<0?`â ï¸ Aucun rÃ©gime n'est cash-flow positif avec ces paramÃ¨tres. Essaye d'allonger la durÃ©e du crÃ©dit Ã  25 ans, d'augmenter l'apport, ou de trouver un bien moins cher.`
+      :`â Le rÃ©gime ${best} est optimal pour ton objectif de cash-flow maximal.`}
+    </div>
+  `;
+}
+
+// ââ NAVIGATION ââ
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ââ PWA INSTALL ââ
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+  document.getElementById('installBanner').style.display='flex';
+});
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if(outcome==='accepted') document.getElementById('installBanner').style.display='none';
+    deferredPrompt=null;
+  }
+});
+
+// ââ SERVICE WORKER (offline) ââ
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE='immo-sim-v1';
+    const URLS=['/'];
+    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll([]))));
+    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
+      const clone=res.clone();
+      caches.open(CACHE).then(c=>c.put(e.request,clone));
+      return res;
+    }))));
+  `;
+  const blob = new Blob([swCode],{type:'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+
+// ââ INIT ââ
+buildSliders();
+compute();
+</script>
+</body>
+</html>
